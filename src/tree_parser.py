@@ -1,3 +1,4 @@
+# src/tree_parser.py
 import torch
 import torch.nn.functional as F
 
@@ -83,7 +84,8 @@ class TreeParser:
             # 葉節點 (Leaf)
             # ==========================================
             cfg = registry.get_leaf_config(node_id)[0]
-            f_name = cls._get_feature_name(cfg['feature_idx'])
+            f_name = cls._get_feature_name(cfg['filter_idx'])
+            
             operator = "<" if cfg["is_negated"] else ">="
             
             # 1. 解析 Filter 數值
@@ -115,7 +117,8 @@ class TreeParser:
             # 內部節點 (Node)
             # ==========================================
             cfg = registry.get_node_config(node_id)
-            f_name = cls._get_feature_name(cfg['feature_idx'])
+            f_name = cls._get_feature_name(cfg['filter_idx'])
+            a_name = cls._get_feature_name(cfg['agg_idx'])
             
             # 1. 解析 Filter 數值
             s_val = "?"
@@ -140,4 +143,4 @@ class TreeParser:
             
             operator = "<" if cfg["is_negated"] else ">"
 
-            return f"Filter: Subset = {{ {f_name} < {s_val} }}\nCond: {agg}(Subset) {operator} {phi_val}"
+            return f"Filter: Subset = {{ {f_name} < {s_val} }}\nCond: {agg}({a_name}) {operator} {phi_val}"

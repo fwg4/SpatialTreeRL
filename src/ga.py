@@ -48,7 +48,7 @@ class DummyGARegistry:
         if is_leaf:
             self.leaf_configs[node_id] = [
                 {
-                    "feature_idx": random.randint(0, self.feature_dim - 1),
+                    "filter_idx": random.randint(0, self.feature_dim - 1),
                     "is_negated": random.choice([True, False]),
                     "topo": random.choice(["line", "ring"]),
                 }
@@ -59,7 +59,8 @@ class DummyGARegistry:
             right_id = self._get_next_id()
             self.tree_structure[node_id] = {"left": left_id, "right": right_id}
             self.node_configs[node_id] = {
-                "feature_idx": random.randint(0, self.feature_dim - 1),
+                "filter_idx": random.randint(0, self.feature_dim - 1),
+                "agg_idx": random.randint(0, self.feature_dim - 1),
                 "is_negated": random.choice([True, False]),
                 "agg_type": random.choice(["mean", "quantile", "std"]),
                 "q_value": random.uniform(0.0, 1.0)

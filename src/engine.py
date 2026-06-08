@@ -2,6 +2,7 @@
 import torch
 from state import TensorizedState
 
+
 class SpatialEngine:
     """
     客觀幾何與符號執行引擎。
@@ -19,10 +20,10 @@ class SpatialEngine:
         [內部運算元] 純粹的 Filtration
         """
         condition = state.features[:, feature_idx] < theta_filter
-        
+
         if is_negated:
             condition = ~condition
-            
+
         return state.station_mask & condition
 
     # ==========================================
@@ -38,19 +39,19 @@ class SpatialEngine:
         輸出客觀純量，供 Policy 進行 Bernoulli 路由。
         """
         mask = SpatialEngine._get_mask(
-            state, node_config["feature_idx"], theta_filter, node_config["is_negated"])
-        valid_targets = state.features[mask, node_config["feature_idx"]]
-        
+            state, node_config["filter_idx"], theta_filter, node_config["is_negated"])
+        valid_targets = state.features[mask, node_config["agg_idx"]]
+
         if valid_targets.numel() == 0:
             return torch.zeros(1, device=state.features.device)
 
         agg_type = node_config.get("agg_type", "quantile")
-        
+
         if agg_type == "quantile":
             return torch.quantile(
-                valid_targets.float(), 
-                node_config.get("q_value", 0.5), 
-                dim=0, 
+                valid_targets.float(),
+                node_config.get("q_value", 0.5),
+                dim=0,
                 keepdim=True
             )
         elif agg_type == "mean":
@@ -77,13 +78,13 @@ class SpatialEngine:
         """
         # 1. Filtration (與 Policy 共用底層邏輯)
         mask = SpatialEngine._get_mask(
-            state, leaf_config["feature_idx"], theta_filter, leaf_config["is_negated"])
+        state, leaf_config["filter_idx"], theta_filter, leaf_config["is_negated"])
 
         global_ids = torch.nonzero(mask).squeeze(1)
 
         if global_ids.numel() == 0:
             return torch.empty(0, dtype=torch.long, device=state.features.device), False
-        
+
         # 取得被選中站點的原始 2D 座標 (假設特徵的前兩維度是 x, y)
         valid_nodes = state.features[global_ids, :2]
         topo = leaf_config.get("topo", "line")
