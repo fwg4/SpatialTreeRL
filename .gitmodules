@@ -1,0 +1,3 @@
+[submodule "python_mini_metro"]
+	path = python_mini_metro
+	url = https://github.com/yanfengliu/python_mini_metro.git

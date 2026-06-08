@@ -1,0 +1,40 @@
+x-base-config: &base
+  volumes:
+    - .:/workspace
+  working_dir: /workspace
+  environment: &base-env
+    PYTHONPATH: /workspace/src
+    SDL_VIDEODRIVER: dummy
+    SDL_AUDIODRIVER: dummy
+    CUDA_LAUNCH_BLOCKING: 1
+  entrypoint: ["bash", "-c", "pip install -e /workspace/python_mini_metro --no-deps > /dev/null 2>&1 && exec \"$$@\"", "--"]
+
+services:
+  metro-gpu-test:
+    <<: *base
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile.gpu
+    environment:
+      <<: *base-env
+      EXPECT_GPU: 1
+    tty: true
+    stdin_open: true
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              # device_ids: ["0"]
+              capabilities: [gpu]
+
+  metro-test:
+    <<: *base
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    environment:
+      <<: *base-env
+      EXPECT_GPU: 0
+    command: pytest tests/ -v

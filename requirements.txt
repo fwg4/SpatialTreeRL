@@ -1,0 +1,12 @@
+# python_mini_metro
+numpy
+pygame-ce
+shapely
+shortuuid
+
+
+pytest
+
+matplotlib
+imageio
+imageio[ffmpeg]

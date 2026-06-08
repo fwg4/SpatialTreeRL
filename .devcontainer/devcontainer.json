@@ -1,0 +1,23 @@
+{
+    "name": "SpatialTreeRL",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "LittleFoxTeam.vscode-python-test-adapter"
+            ]
+        }
+    },
+    "remoteEnv": {
+        "PYTHONPATH": "${containerWorkspaceFolder}/src:${containerWorkspaceFolder}/python_mini_metro/src",
+        "SDL_VIDEODRIVER": "dummy",
+        "SDL_AUDIODRIVER": "dummy"
+    },
+    // 因為 Dockerfile 已經裝過，這裡可以留空或僅用於後續開發依賴更新
+    "postCreateCommand": "pip install --no-cache-dir -r requirements.txt",
+    "runArgs": ["--name", "metro-codespace"]
+}
