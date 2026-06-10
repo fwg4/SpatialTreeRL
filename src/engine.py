@@ -1,6 +1,6 @@
 # src/engine.py
 import torch
-from state import TensorizedState
+from state import StateBatch
 
 
 class SpatialEngine:
@@ -11,7 +11,7 @@ class SpatialEngine:
 
     @staticmethod
     def _get_mask(
-        state: TensorizedState,
+        state: StateBatch,
         feature_idx: int,
         theta_filter: float,
         is_negated: bool
@@ -31,7 +31,7 @@ class SpatialEngine:
     # ==========================================
     @staticmethod
     def compute_routing_scalar(
-        state: TensorizedState,
+        state: StateBatch,
         node_config: dict,
         theta_filter: float,
     ) -> torch.Tensor:
@@ -66,7 +66,7 @@ class SpatialEngine:
     # ==========================================
     @staticmethod
     def compute_topology_sequence(
-            state: TensorizedState,
+            state: StateBatch,
             leaf_config: dict,
             theta_filter: float,
             choose_coord: torch.Tensor,

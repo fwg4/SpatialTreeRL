@@ -14,7 +14,7 @@ class MetroTreeAgent(nn.Module):
         state = self.encoder.encode(obs)
         
         # 2. 評估價值 (Critic)
-        value = self.critic(state.features, state.station_mask)
+        value = self.critic(state)
         
         # 3. 樹狀決策 (DecisionMaker)
         env_actions, atomic_decisions = self.decision_maker.make_tree_decision(

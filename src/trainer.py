@@ -1,3 +1,4 @@
+# src/trainer.py
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -22,7 +23,7 @@ class PPOTrainer:
 
     def update(self, buffer, ppo_epochs, batch_size):
         
-        adv_list = [d["advantage"] for d in buffer.decision_buffer]
+        adv_list = [d["advantage"] for d in buffer.state_buffer]
         if len(adv_list) > 1:
             # 轉為 Tensor 計算平均與標準差
             advs_tensor = torch.tensor(adv_list, dtype=torch.float32)
@@ -30,7 +31,7 @@ class PPOTrainer:
             std = (advs_tensor.std() + 1e-8).item()
             
             # 將算好的結果寫回 buffer
-            for d in buffer.decision_buffer:
+            for d in buffer.state_buffer:
                 d["advantage"] = (d["advantage"] - mean) / std
                 
         total_p_loss = 0.0
@@ -122,16 +123,17 @@ class PPOTrainer:
         for batch in buffer.get_value_batches(batch_size):
             self.critic_optimizer.zero_grad()
 
-            preds = self.agent.critic(
-                batch["features"], batch["masks"]).squeeze(-1)
-            loss = F.mse_loss(preds, batch["target_values"])
+            preds = self.agent.critic(batch["states"]).view(-1)
+            loss = F.mse_loss(preds, batch["returns"])
 
             with torch.no_grad():
-                y_true = batch["target_values"]
+                y_true = batch["returns"]
                 y_pred = preds
-                var_y = torch.var(y_true)
-                explained_var = torch.nan if var_y == 0 else 1.0 - \
-                    torch.var(y_true - y_pred) / (var_y + 1e-8)
+                var_y = torch.var(y_true, unbiased=False)
+                if var_y == 0:
+                    explained_var = torch.tensor(float('nan'), device=y_true.device)
+                else:
+                    explained_var = 1.0 - torch.var(y_true - y_pred, unbiased=False) / (var_y + 1e-8)
 
             # Critic 獨立優化，無需乘上 c_value
             loss.backward()

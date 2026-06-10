@@ -3,7 +3,7 @@ import math
 import torch
 import torch.nn.functional as F
 from typing import Dict, Tuple
-from state import TensorizedState
+from state import StateBatch
 
 
 class StateEncoder:
@@ -73,7 +73,7 @@ class StateEncoder:
         self.mask_buffer[:N] = True
         self.mask_buffer[N:] = False
         
-        return TensorizedState(
-            features=self.feature_buffer.clone(), 
+        return StateBatch(
+            features=self.feature_buffer.clone(),
             station_mask=self.mask_buffer.clone()
         )

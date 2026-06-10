@@ -3,28 +3,29 @@ import torch
 import random
 from collections import defaultdict
 from typing import List, Dict, Generator
+from state import StateBatch
 
 
 class PPOBuffer:
     def __init__(self, device: torch.device):
         self.device = device
-        self.decision_buffer: List[Dict] = []
-        self.atomic_buffer: List[Dict] = []
+        self.state_buffer: List[Dict] = []
+        self.action_buffer: List[Dict] = []
 
     def add_episode(self, decision_buf: List[Dict], atomic_buf: List[Dict]):
-        offset = len(self.decision_buffer)
-        self.decision_buffer.extend(decision_buf)
+        offset = len(self.state_buffer)
+        self.state_buffer.extend(decision_buf)
 
         for a in atomic_buf:
             a_copy = a.copy()
             a_copy["decision_idx"] += offset
             # 取消 advantage 的複製，只保留 index 以確保資料一致性
-            self.atomic_buffer.append(a_copy)
+            self.action_buffer.append(a_copy)
 
     def get_policy_batches(self, batch_size: int):
         # 1. 分組
         grouped = defaultdict(list)
-        for a in self.atomic_buffer:
+        for a in self.action_buffer:
             grouped[a["type"]].append(a)
 
         # 2. 產出 Batch
@@ -36,7 +37,7 @@ class PPOBuffer:
                 batch_indices = indices[start_idx: start_idx + batch_size]
                 batch = [items[i] for i in batch_indices]
 
-                advantages = [self.decision_buffer[b["decision_idx"]]
+                advantages = [self.state_buffer[b["decision_idx"]]
                               ["advantage"] for b in batch]
 
                 # ==========================================
@@ -64,12 +65,12 @@ class PPOBuffer:
                 }
 
     def get_value_batches(self, batch_size: int) -> Generator[Dict, None, None]:
-        indices = list(range(len(self.decision_buffer)))
+        indices = list(range(len(self.state_buffer)))
         random.shuffle(indices)
 
-        for start_idx in range(0, len(self.decision_buffer), batch_size):
+        for start_idx in range(0, len(self.state_buffer), batch_size):
             batch_indices = indices[start_idx: start_idx + batch_size]
-            batch_decisions = [self.decision_buffer[i] for i in batch_indices]
+            batch_decisions = [self.state_buffer[i] for i in batch_indices]
 
             features = torch.stack(
                 [d["state"].features for d in batch_decisions])
@@ -77,11 +78,13 @@ class PPOBuffer:
                 [d["state"].station_mask for d in batch_decisions])
 
             yield {
-                "features": features.to(self.device),
-                "masks": masks.to(self.device),
-                "target_values": torch.tensor([d["target_value"] for d in batch_decisions], dtype=torch.float32, device=self.device)
+                "states": StateBatch(
+                    features,
+                    masks
+                ),
+                "returns": torch.tensor([d["return"] for d in batch_decisions], dtype=torch.float32, device=self.device)
             }
 
     def clear(self):
-        self.decision_buffer.clear()
-        self.atomic_buffer.clear()
+        self.state_buffer.clear()
+        self.action_buffer.clear()
